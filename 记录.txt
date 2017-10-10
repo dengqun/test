@@ -1,0 +1,579 @@
+create or replace procedure my_test
+is
+row_test test%rowtype;
+begin
+  select * into row_test from test;
+  insert into test values (testSeq.Nextval,'dengqun','man');
+DBMS_OUTPUT.put_line('hello');
+end my_test;
+
+
+注意：！！！！创建不带参数的过程时，不要带括号！！！
+
+谈谈exists的理解 你可以看成两部分，前半部是真正要查询的数据，后半部分是要匹配的部分
+如test表
+id name
+
+1  dengqun
+
+2  dengqun
+3   dengqun
+select  * from test where exist (select 1/null/* from test/dual)
+前半部和后半部子查询没有任何关联的意思，所以只要子查询返回true，前半部就进行test的全量查询
+如果select  * from test t where exist (select 1/null/* from test/dual t1 where t.id=1)
+就是外面的t表进入子查询关联查询，那就是外面的全量数据要在子查询里面在匹配查询
+所以结果
+1 dengqn
+
+导入或复制表数据 oracle/mysql
+
+INSERT INTO 表名(字段列表) SELECT (字段名1,字段名2,…) FROM 另外的表名
+
+create table t2 as select * from t1
+
+SELECT * INTO OUTFILE 'C:\Users\IBM\Desktop\data\data.txt' FIELDS TERMINATED BY ',' FROM t_users
+
+
+load data INFILE 'E:\\mysql\\data\\test\\data.txt' into TABLE t2 FIELDS TERMINATED by ',';
+
+oracle 导出查询的数据成sql文件，记得后面加上commit;，不然好像插入不了数据
+oracle 导出数据成csv文件记得先删除表头，再保存成csv，会提示兼容问题，直接选是
+然后编写控制文件ctl，用sqlldr命令加载即可，典型的ctl文件如下
+load data  
+infile 'E:\orcltest\tt6.csv'   
+append  into table "TEST"  
+fields terminated by ','
+TRAILING NULLCOLS
+(id,name,sex)    
+
+spool 的方式导出数据，可以以你想要的分割符号来分割数据，想要的格式保存
+set echo off            --是否显示执行的命令内容  
+set feedback off       --是否显示 *   rows   selected  
+set heading off        --是否显示字段的名称
+set verify off         --是否显示替代变量被替代前后的语句。fil
+set trimspool off      --去字段空格
+set pagesize 1000      --页面大小
+set linesize 50//linesize设定尽量根据需要来设定，大了生成的文件也大
+define fil= 'e:\orcltest\exp.txt'
+prompt *** Spooling to &fil
+spool &fil
+select id||','||name||','||sex from test;
+spool off;
+
+       
+
+　1、 将数据库TEST完全导出，用户名system 密码manager 导出到D：\daochu.dmp中
+
+ 
+
+　　exp system/manager@TEST file=d：\daochu.dmp full=y
+
+ 
+
+　　2、 将数据库中system用户与sys用户的表导出
+
+ 
+
+　　exp system/manager@TEST file=d：\daochu.dmp owner=（system，sys）
+
+ 
+
+　　3、 将数据库中的表table1 、table2导出
+
+ 
+
+　　exp system/manager@TEST file=d：\daochu.dmp tables=（table1，table2）
+
+ 
+
+　　4、 将数据库中的表table1中的字段filed1以"00"打头的数据导出
+
+ 
+
+　　exp system/manager@TEST file=d：\daochu.dmp tables=（table1） query=\" where filed1 like '00%'\"
+
+ 
+
+　　上面是常用的导出，对于压缩我不太在意，用winzip把dmp文件可以很好的压缩。
+
+ 
+
+　　不过在上面命令后面 加上 compress=y  就可以了
+　 1、将D：\daochu.dmp 中的数据导入 TEST数据库中。
+
+ 
+
+　　imp system/manager@TEST  file=d：\daochu.dmp
+
+ 
+
+　　上面可能有点问题，因为有的表已经存在，然后它就报错，对该表就不进行导入。
+
+ 
+
+　　在后面加上 ignore=y 就可以了。
+
+ 
+
+　　2 将d：\daochu.dmp中的表table1 导入
+
+ 
+
+　　imp system/manager@TEST  file=d：\daochu.dmp  tables=（table1）
+
+ 
+
+　　基本上上面的导入导出够用了。不少情况我是将表彻底删除，然后导入。
+
+ 
+
+　　注意：
+
+ 
+
+　　你要有足够的权限，权限不够它会提示你。
+
+　　数据库时可以连上的。可以用tnsping TEST 来获得数据库TEST能否连上。
+
+tree /f>
+
+查询当前数据库名
+方法一:select name from v$database;
+方法二：show parameter db
+方法三：查看参数文件。
+
+查询当前实例名
+方法一：select instance_name from v$instance;
+方法二：show parameter instance
+方法三：在参数文件中查询。
+
+查询数据库域名
+方法一：select value from v$parameter where name = 'db_domain';
+方法二：show parameter domain
+方法三：在参数文件中查询。
+
+查询数据库服务名
+方法一：select value from v$parameter where name = 'service_name';
+方法二：show parameter service_name
+方法三：在参数文件中查询。
+
+show user；
+create user 用户名 identified by 口令[即密码]；
+alter user test identified by 123456;
+alter user scott account unlock; 解禁scott用户
+drop user test;
+若用户拥有对象，则不能直接删除，否则将返回一个错误值。指定关键字cascade,可删除用户所有的对象，然后再删除用户。
+语法：
+drop user 用户名 cascade;
+例子：
+drop user test cascade;
+授权角色
+
+oracle为兼容以前版本，提供三种标准角色（role）:connect/resource和dba.
+
+（1）讲解三种标准角色：
+
+1》. connect role(连接角色)
+
+--临时用户，特指不需要建表的用户，通常只赋予他们connect role. 
+
+--connect是使用oracle简单权限，这种权限只对其他用户的表有访问权限，包括select/insert/update和delete等。
+
+--拥有connect role 的用户还能够创建表、视图、序列（sequence）、簇（cluster）、同义词(synonym)、回话（session）和其他  数据的链（link）
+2》. resource role(资源角色)
+
+--更可靠和正式的数据库用户可以授予resource role。
+
+--resource提供给用户另外的权限以创建他们自己的表、序列、过程(procedure)、触发器(trigger)、索引(index)和簇(cluster)。
+
+3》. dba role(数据库管理员角色)
+
+--dba role拥有所有的系统权限
+
+--包括无限制的空间限额和给其他用户授予各种权限的能力。system由dba用户拥有
+
+
+（2）授权命令
+
+语法： grant connect, resource to 用户名;
+
+ 例子： grant connect, resource to test;
+（3）撤销权限
+
+      语法： revoke connect, resource from 用户名;
+
+      列子： revoke connect, resource from test;
+
+除了前面讲到的三种系统角色----connect、resource和dba，用户还可以在oracle创建自己的role。用户创建的role可以由表或系统权限或两者的组合构成。为了创建role，用户必须具有create role系统权限。
+
+1》创建角色
+
+语法： create role 角色名;
+
+例子： create role testRole;
+
+2》授权角色
+
+语法： grant select on class to 角色名;
+
+列子： grant select on class to testRole;
+
+注：现在，拥有testRole角色的所有用户都具有对class表的select查询权限
+
+3》删除角色
+
+语法： drop role 角色名;
+
+例子： drop role testRole;
+
+注：与testRole角色相关的权限将从数据库全部删除
+
+select username,default_tablespace,temporary_tablespace from user_users;
+alter user kcgl default tablespace kcgl temporary tablespace temp;
+create tablespace user_data    datafile 'D:\ a.dbf' size 50m   autoextend on  next 50m maxsize 20480m   extent management local;
+
+create user username identified by password   default tablespace user_data;
+
+/*create tablespace dengqunspace datafile 'F:\oracle\oradata\orcl\dengqunspace.dbf'
+size 50m
+autoextend on
+next 50m 
+maxsize 10240m
+extent management local*/
+
+alter user dengqun default tablespace dengqunspace
+1.新表空间的创建
+语法格式:CREATE TABLESPACE 表空间名
+DATAFILE 文件标识符[,文件标识符]...
+[DEFAULT STORAGE(存储配置参数)]
+[ONLINE\OFFLINE];
+其中:文件标识符=’文件名’[SIZE整数[K\M][REUSE]
+2.修改表空间配置
+语法格式:ALTER TABLESPCE 表空间名
+(ADD DATAFILE 文件标识符[,文件标识符]...
+\RENAME DATAFILE ’文件名’[,’文件名’]...
+TO ’文件名’[,’文件名’]...
+\DEFAULT STORAGE(存储配置参数)
+\ONLINE\OFFLINE[NORMAL\IMMEDIATE]
+\(BEGIN\END)BACKUP);
+3.取消表空间
+语法格式:DROP TABLESPACE表空间名[INCLUDING CONTENTS];
+4.检查表空间使用情况
+(1)检查当前用户空间分配情况
+SELECT tablespace_name,SUM(extents),SUM(blocks),SUM(bytes)
+FROM user_segments
+GROUP BY tablespace_name
+(2)a.检查各用户空间分配情况
+SELECT owner,tablespace_;
+(2)b.检查各用户空间分配情况
+SELECT owner,tablespace_name,SUM(extents),SUM(blocks),SUM(bytes)
+FROM dba_segments
+GROUP BY owner,tablespace_name;
+(3) 检查当前用户数据库实体空间使用情况
+SELECT tablespace_name,segment_name,segment_type,
+COUNT(extent_id),SUM(blocks),SUM(bytes)
+FROM user_extents
+GROUP BY tablespace_name,segment_name,segment_type;
+(4)检查各用户空间使用情况
+SELECT owner,tablespace_name,COUNT(extent_id),SUM(blocks),
+SUM(bytes) FROM user_extents
+GROUP BY owner,tablespace_name;
+(5)检查数据库空间使用情况
+SELECT tablespace_name,COUNT(extent_id),SUM(blocks),SUM(bytes)
+FROM user_extents
+GROUP BY tablespace_name;
+(6)检查当前用户自由空间情况
+SELECT tablespace_name,COUNT(block_id),SUM(blocks),SUM(bytes)
+FROM user_free_space
+GROUP BY tablespace_name;
+(7)检查数据库自由空间情况
+SELECT tablespace_name,COUNT(block_id),SUM(blocks),SUM(bytes)
+FROM dba_free_space
+GROUP BY tablespace_name;
+
+10g三个用户的默认密码
+    sys：change_on_install
+    system：manager
+    scott：tiger（默认是lock的，需解锁）
+
+plsql调试窗口
+begin
+  -- Call the procedure
+  my_test(p_in => :p_in);
+end;
+
+plsql sql窗口 call 过程名（参数）显示结果
+plsql sql窗口 	begin
+  		my_test(参数);
+		end;         显示结果
+
+plsql 命令窗口 call和exec 不显示结果
+
+Oracle创建三个定时任务，每个小时调用一次REPORT_HOUR，每天调用一次REPORT_DAY，每个月调用一次REPORT_MONTH
+
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+declare  
+    job1 number;  
+    job2 number;  
+    job3 number;  
+begin  
+    sys.dbms_job.submit(job => job1,  
+    what => 'REPORT_HOUR;',  
+    next_date => to_date('01-01-2014 00:00:00', 'dd-mm-yyy hh24:mi:ss'),  
+    interval => 'sysdate+1/24');  
+  
+    sys.dbms_job.submit(job => job2,  
+    what => 'REPORT_DAY;',  
+    next_date => to_date('01-01-2014 00:00:00', 'dd-mm-yyy hh24:mi:ss'),  
+    interval => 'sysdate+1');  
+  
+    sys.dbms_job.submit(job => job3,  
+    what => 'REPORT_MONTH;',  
+    next_date => to_date('01-01-2014 00:00:00', 'dd-mm-yyy hh24:mi:ss'),  
+    interval => 'TRUNC(LAST_DAY(SYSDATE)+1)');  
+end;  
+
+
+创建完成后，可通过查询dba_jobs表查询当前数据库的定时任务。
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+select * from dba_jobs  
+删除定时任务，通过上一条语句查询要删除任务的JOB字段值，通过此值来删除对应任务。
+[sql] view plain copy 在CODE上查看代码片派生到我的代码片
+sys.dbms_job.remove(job1); 
+
+4、查看任务id
+PROCEDURE DENGQUN.MY_TEST 编译错误
+
+错误：PLS-00103: Encountered the symbol ")" when expecting one of the following:
+       
+          <an identifier> <a double-quoted delimited-identifier>
+          current delete exists prior
+行：1
+文本：create or replace procedure my_test()
+
+select * from dba_jobs;  
+
+declare
+ myjob1 number;
+ begin
+   dbms_job.submit(job => myjob1,what => 'my_test1;',next_date => sysdate,interval => 'sysdate+1/24/60');
+   dbms_output.put_line(myjob1);
+   commit;
+   end;
+
+begin
+  dbms_job.run(8);
+  commit;
+  end;
+  
+  begin
+dbms_job.broken(8,true); 
+end;
+
+begin
+dbms_job.remove(8); 
+end;
+
+5、执行任务
+
+begin  
+dbms_job.run(41);--41为任务的id  
+end;   
+6、删除任务
+
+begin  
+dbms_job.remove(41);  
+end;   
+
+学习使用SAVEPOINT 命令。
+--插入一个雇员：
+insert into emp(empno,ename,job)
+values(3000,'小马','STUDENT');
+--插入保存点，检查点的名称为PA：
+savepoint pa;
+--插入另一个雇员：
+
+insert into emp(empno,ename,job)
+values(3001,'小黄','STUDENT');
+--回退到保存点PA，则后插入的小黄被取消，而小马仍然保留。
+Rollback to pa;
+--提交所做的修改：
+commit;
+
+表锁，行锁
+
+lock table emp in exclusive mode;
+。。。for update
+
+ALTER SEQUENCE 序列名
+[INCREMENT BY n]
+[{MAXVALUE n|NOMAXVALUE}]
+[{MINVALUE n|NOMINVALUE}]
+[{CYCLE|NOCYCLE}]
+[{CACHE n|NOCACHE}]；
+
+DROP SEQUENCE 序列名；
+
+序列名.NEXTVAL
+
+CREATE DATABASE LINK 链接名CONNECT TO 账户IDENTIFIED BY 口令 USING 服务名；
+
+表名@数据库链接名
+
+DBMS_OUTPUT.NEW_LINE；
+
+变量名[CONSTANT] 类型标识符[NOT NULL][:=值|DEFAULT 值]；
+变量名表名.字段名%TYPE；
+VARIABLE 变量名数据类型
+
+begin
+:g_ename:=:g_ename||'Hello~'; --在程序中使用结合变量
+dbms_output.put_line(:g_ename); --输出结合变量的值
+end;
+--步骤3：重新执行程序。
+--步骤4：程序结束后用命令显示结合变量的内容：
+print g_ename
+[说明] g_ename 为结合变量，可以在程序中引用或赋值，引用时在结合变量前面要加
+上“:”。在程序结束后该变量的值仍然存在，其他程序可以继续引用。
+记录变量名表名%ROWTYPE;
+
+IF 条件1 THEN
+语句序列1；
+[ELSIF 条件2 THEN
+语句序列2;
+...
+ELSE
+语句序列n;]
+END IF;
+
+LOOP --循环开始标识
+语句1；
+语句2；
+......
+EXIT [WHEN 条件]；
+END LOOP； --循环结束标识
+该循环的作用是反复执行LOOP 与ENDLOOP
+
+
+FOR 控制变量in [REVERSE] 下限..上限LOOP
+语句1；
+语句2；
+……
+END LOOP；
+
+select t.*,t.rowid from test t where exists(select null from dual) order by id nulls first 
+select t.*,t.rowid from test t where exists(select null from dual) order by id nulls last
+
+set 查看设置shell变量
+env 查看环境变量
+export 查看环境变量或将shell变量导入到环境变量
+
+用户变量 》 环境变量 》shell变量
+
+
+Oracle存储过程使用动态SQL 有两种写法：用 DBMS_SQL 或 execute immediate，建议使用后者。试验步骤如下：
+
+1. DDL和DML （注意DDL中可以用拼接字符串的方法用来create table或drop table，在DML中，类似于insert则不可以直接用execute immediate中直接拼接的方法，必须用using传递参数）
+
+复制代码
+ 1     /*** DDL ***/  
+ 2     begin   
+ 3         EXECUTE IMMEDIATE 'drop table temp_1';   
+ 4         EXECUTE IMMEDIATE 'create table temp_1(name varchar2(8))';   
+ 5     end;  
+ 6      
+ 7     /*** DML ***/  
+ 8     declare   
+ 9         v_1 varchar2(8);   
+10         v_2 varchar2(10);   
+11         str varchar2(50);   
+12     begin   
+13         v_1:='测试人员';   --这里的v_1,v_2可以是直接存储过程中传过来的参数
+14         v_2:='北京';   
+15         str := 'INSERT INTO test (name ,address) VALUES (:1, :2)';   
+16         EXECUTE IMMEDIATE str USING v_1, v_2;   
+17         commit;   
+18     end;  
+复制代码
+ 
+
+2. 返回单条结果
+
+例1：
+
+复制代码
+ 1     declare   
+ 2         str varchar2(500);   
+ 3         c_1 varchar2(10);   
+ 4         r_1 test%rowtype;   
+ 5     begin   
+ 6         c_1:='测试人员';   
+ 7         str:='select * from test where name=:c WHERE ROWNUM=1';   
+ 8         execute immediate str into r_1 using c_1;   
+ 9         DBMS_OUTPUT.PUT_LINE(R_1.NAME||R_1.ADDRESS);   
+10     end ; 
+复制代码
+例2：
+
+复制代码
+ 1     declare  
+ 2         v_col_name varchar2(30) := 'name'; --字段名 name 用变量来表示  
+ 3         v_user_name  varchar2(30); --用户名称  
+ 4         v_user_age  integer;       --用户年龄  
+ 5         v_sql_str  varchar2(500);  --动态 SQL 语句  
+ 6     begin  
+ 7         v_sql_str := 'select '||v_col_name||',age from users --字段名后面不能紧随 into 到变量了  
+ 8                        where age between :start_age and :end_age and rownum=1'; --两个命名参数  ，注意拼接的方法
+ 9           
+10         --用 execute immediate 动态执行 SQL 语句  
+11         --注意其后的 into 字段值到变量的写法，还有 using 来代入参数  
+12         execute immediate v_sql_str into v_user_name,v_user_age using 18,25;   
+13           
+14         dbms_output.put_line('第一个符合条件的用户：'||v_user_name||'，年龄：'||v_user_age);  
+15     end;  
+复制代码
+ 
+
+3. 返回结果集
+
+复制代码
+ 1     CREATE OR REPLACE package pkg_test as   
+ 2         /* 定义ref cursor类型   
+ 3         不加return类型，为弱类型，允许动态sql查询，   
+ 4         否则为强类型，无法使用动态sql查询;   
+ 5         */   
+ 6         type myrctype is ref cursor;  
+ 7      
+ 8         --函数申明   
+ 9         function get(intID number) return myrctype;   
+10     end pkg_test;   
+11     /  
+12      
+13     CREATE OR REPLACE package body pkg_test as   
+14     --函数体   
+15         function get(intID number) return myrctype is   
+16             rc myrctype; --定义ref cursor变量   
+17             sqlstr varchar2(500);   
+18         begin   
+19             if intID=0 then   
+20                 --静态测试，直接用select语句直接返回结果   
+21                 open rc for select id,name,sex,address,postcode,birthday from   
+22     student;   
+23             else   
+24                 --动态sql赋值，用:w_id来申明该变量从外部获得   
+25                 sqlstr := 'select id,name,sex,address,postcode,birthday from student   
+26     where id=:w_id';   
+27                 --动态测试，用sqlstr字符串返回结果，用using关键词传递参数   
+28                 open rc for sqlstr using intid;   
+29             end if;  
+30      
+31             return rc;   
+32         end get;  
+33      
+34     end pkg_test;   
+35     /  
+
+
+
+
+
